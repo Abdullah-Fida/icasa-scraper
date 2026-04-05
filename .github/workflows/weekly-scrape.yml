@@ -4,7 +4,7 @@ name: Weekly Scraper Pipeline
 # You can also trigger it manually from the GitHub Actions tab.
 on:
   schedule:
-    - cron: '0 2 * * 0'   # Every Sunday at 02:00 UTC (07:00 PKT)
+    - cron: '0 14 * * 0'  # Every Sunday at 14:00 UTC (19:00 / 7:00 PM PKT)
   workflow_dispatch:        # Manual trigger button in GitHub UI
 
 jobs:
