@@ -1,0 +1,63 @@
+name: Weekly Scraper Pipeline
+
+# ─── Schedule: Runs every Monday at 03:00 UTC ───
+# You can also trigger it manually from the GitHub Actions tab.
+on:
+  schedule:
+    - cron: '0 3 * * 1'   # Every Monday at 03:00 UTC (08:00 PKT)
+  workflow_dispatch:        # Manual trigger button in GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180    # 3-hour safety limit
+
+    steps:
+      # ── 1. Checkout the repo ──
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Set up Python ──
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # ── 3. Install dependencies ──
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 pandas lxml
+
+      # ── 4. Restore last_id.txt from previous runs ──
+      #    This ensures External IDs continue from where they left off.
+      - name: Restore last_id.txt cache
+        uses: actions/cache@v4
+        with:
+          path: last_id.txt
+          key: last-id-${{ github.run_number }}
+          restore-keys: |
+            last-id-
+
+      # ── 5. Run the full pipeline ──
+      - name: Run scraper pipeline
+        run: python run_pipeline.py
+
+      # ── 6. Upload final output CSVs as downloadable artifacts ──
+      - name: Upload Phase 9 output files
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraper-output-${{ github.run_number }}
+          path: |
+            output/Phase9_Objekte.csv
+            output/Phase9_Kontakte.csv
+          retention-days: 90
+
+      # ── 7. Also upload all intermediate files (for debugging) ──
+      - name: Upload full output (debug)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: full-output-${{ github.run_number }}
+          path: output/
+          retention-days: 30
